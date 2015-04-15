@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"flag"
-
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -21,7 +20,7 @@ func main() {
 		"en.atm.co2e.kt_Indicator_en_xml_v2.xml",
 		"The XML file of data to unmarshal")
 	flag.StringVar(&args.debugFile, "debug",
-		"/tmp/debug.xml",
+		"/dev/null",
 		"The file to output marshalled JSON to.")
 	flag.StringVar(&args.outFile, "out",
 		"co2e.json",
