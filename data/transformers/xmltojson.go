@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"encoding/json"
 	"encoding/xml"
 	"flag"
@@ -28,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	in, err := decruft(args.inFile)
-	ioutil.WriteFile(args.outFile, in, 0644)
+	ioutil.WriteFile(args.debugFile, in, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,14 +51,16 @@ type Root struct { // ???(aoeu): Why is this struct needed?
 }
 
 type Record struct {
-	Country string
+	Country string 
+	Attr	string
 	Year    int
 	Value   float64
 }
 
+
 // Types for marshalling JSON.
-type Countries []Country
-type Country map[string]float64
+type Countries []Country2
+type Country2 map[string]float64
 
 func toJSON(rr []Record, outFile string) error {
 	// Country -> Year -> C02 emission value
@@ -65,6 +68,7 @@ func toJSON(rr []Record, outFile string) error {
 	for _, r := range rr {
 		if _, ok := t[r.Country]; !ok {
 			t[r.Country] = make(map[string]float64)
+			fmt.Println(r.Attr)
 		}
 		t[r.Country][strconv.Itoa(r.Year)] = r.Value
 	}
@@ -101,6 +105,7 @@ func decruft(filename string) ([]byte, error) {
 		`-e`, `s/"//`,
 		`-e`, `s/<\(\w*\)\(.*<\/\)field/<\1\2\1/`, // Case in point.
 		`-e`, `s/<Value \/>/<Value>0.0<\/Value>/`,
+		`-e`, `s/\(^.*Country\) key="\(.*\)"\(>.*$\)/\1\3\n\<Attr\>\2\<\/Attr\>/`,
 		filename,
 	}
 	return exec.Command("sed", args...).Output()
