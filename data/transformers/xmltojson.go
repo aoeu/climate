@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os/exec"
@@ -51,24 +51,52 @@ type Root struct { // ???(aoeu): Why is this struct needed?
 }
 
 type Record struct {
-	Country string 
-	Attr	string
+	Country string
+	Abbr    string
 	Year    int
 	Value   float64
 }
-
 
 // Types for marshalling JSON.
 type Countries []Country2
 type Country2 map[string]float64
 
 func toJSON(rr []Record, outFile string) error {
+	// Filter out data records are neither countries nor regions.
+	blacklist := make(map[string]bool, 0)
+	for _, a := range []string{
+		"NAC",
+		"ARB",
+		"OED",
+		"WLD",
+		"LIC",
+		"LMC",
+		"LMY",
+		"MIC",
+		"NOC",
+		"OEC",
+		"LCN",
+		"HIC",
+		"EAP",
+		"EAS",
+		"ECA",
+		"ECS",
+		"SSF",
+		"SST",
+		"UMC",
+		"MEA",
+	} {
+		blacklist[a] = true
+	}
 	// Country -> Year -> C02 emission value
 	t := make(map[string]map[string]float64)
 	for _, r := range rr {
+		if _, ok := blacklist[r.Abbr]; ok {
+			continue
+		}
 		if _, ok := t[r.Country]; !ok {
 			t[r.Country] = make(map[string]float64)
-			fmt.Println(r.Attr)
+			fmt.Println(r.Abbr)
 		}
 		t[r.Country][strconv.Itoa(r.Year)] = r.Value
 	}
@@ -105,7 +133,7 @@ func decruft(filename string) ([]byte, error) {
 		`-e`, `s/"//`,
 		`-e`, `s/<\(\w*\)\(.*<\/\)field/<\1\2\1/`, // Case in point.
 		`-e`, `s/<Value \/>/<Value>0.0<\/Value>/`,
-		`-e`, `s/\(^.*Country\) key="\(.*\)"\(>.*$\)/\1\3\n\<Attr\>\2\<\/Attr\>/`,
+		`-e`, `s/\(^.*Country\) key="\(.*\)"\(>.*$\)/\1\3\n\<Abbr\>\2\<\/Abbr\>/`,
 		filename,
 	}
 	return exec.Command("sed", args...).Output()
