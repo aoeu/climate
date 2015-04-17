@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -16,20 +16,28 @@ func main() {
 		inFile    string
 		outFile   string
 		debugFile string
+		blacklist string
+		whitelist string
 	}{}
 	flag.StringVar(&args.inFile, "in",
 		"en.atm.co2e.kt_Indicator_en_xml_v2.xml",
 		"The XML file of data to unmarshal")
 	flag.StringVar(&args.debugFile, "debug",
-		"/dev/null",
+		"",
 		"The file to output marshalled JSON to.")
 	flag.StringVar(&args.outFile, "out",
 		"co2e.json",
 		"A file for debugging intermediary state.")
+	flag.StringVar(&args.blacklist, "blacklist", "",
+		"A file of blacklist abbreviation ('key' in the source file)"+" values of records to exclude")
+	flag.StringVar(&args.whitelist, "whitelist", "",
+		"A file of whilelist abbreviation ('key' in the source file)"+" values of records to include")
 	flag.Parse()
 
 	in, err := decruft(args.inFile)
-	ioutil.WriteFile(args.debugFile, in, 0644)
+	if args.debugFile != "" {
+		ioutil.WriteFile(args.debugFile, in, 0644)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,6 +47,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if args.blacklist != "" {
+		b, err := ioutil.ReadFile(args.blacklist)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bl := strings.Split(string(b), "\n")
+		m := make(map[string]struct{}, len(bl))
+		for _, s := range bl {
+			m[s] = struct{}{}
+		}
+		r.Records.blacklist(m)
+	}
+
 	err = toJSON(r.Records, args.outFile)
 	if err != nil {
 		log.Fatal(err)
@@ -47,8 +69,10 @@ func main() {
 
 // Types for unmarshalling XML.
 type Root struct { // ???(aoeu): Why is this struct needed?
-	Records []Record `xml:"Data>Record"`
+	Records `xml:"Data>Record"`
 }
+
+type Records []Record
 
 type Record struct {
 	Country string
@@ -57,47 +81,35 @@ type Record struct {
 	Value   float64
 }
 
-// Types for marshalling JSON.
-type Countries []Country2
-type Country2 map[string]float64
+func (r *Records) blacklist(abbr map[string]struct{}) {
+	s := make(Records, len(*r))
+	for _, rr := range *r {
+		if _, ok := abbr[rr.Abbr]; !ok {
+			s = append(s, rr)
+		}
+	}
+	*r = s
+}
+
+func (r *Records) whitelist(abbr map[string]struct{}) {
+	s := make(Records, len(*r))
+	for _, rr := range *r {
+		if _, ok := abbr[rr.Abbr]; ok {
+			s = append(s, rr)
+		}
+	}
+	*r = s
+}
 
 func toJSON(rr []Record, outFile string) error {
-	// Filter out data records are neither countries nor regions.
-	blacklist := make(map[string]bool, 0)
-	for _, a := range []string{
-		"NAC",
-		"ARB",
-		"OED",
-		"WLD",
-		"LIC",
-		"LMC",
-		"LMY",
-		"MIC",
-		"NOC",
-		"OEC",
-		"LCN",
-		"HIC",
-		"EAP",
-		"EAS",
-		"ECA",
-		"ECS",
-		"SSF",
-		"SST",
-		"UMC",
-		"MEA",
-	} {
-		blacklist[a] = true
-	}
 	// Country -> Year -> C02 emission value
 	t := make(map[string]map[string]float64)
 	for _, r := range rr {
-		if _, ok := blacklist[r.Abbr]; ok {
-			continue
-		}
 		if _, ok := t[r.Country]; !ok {
 			t[r.Country] = make(map[string]float64)
-			fmt.Println(r.Abbr)
 		}
+		// TODO(aoeu): What's the best way to filter out 0 Values?
+		// TODO(aoeu): Do some countries need backfilled dummy values for some years?
 		t[r.Country][strconv.Itoa(r.Year)] = r.Value
 	}
 	// The data is arranged as a series of JSON objects.
