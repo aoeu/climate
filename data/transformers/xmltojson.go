@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -101,23 +102,83 @@ func (r *Records) whitelist(abbr map[string]struct{}) {
 	*r = s
 }
 
-func toJSON(rr []Record, outFile string) error {
+// TODO(aoeu): The names here are confusing and this smells of anti-pattern.
+type sorted struct {
+	totalC02e map[string]float64
+	rank      []string
+	top       map[string]struct{}
+}
+
+func newSorted() *sorted {
+	f := &sorted{}
+	f.totalC02e = make(map[string]float64)
+	f.rank = make([]string, 0)
+	f.top = make(map[string]struct{})
+	return f
+}
+
+func (r Records) toSorted(topN int) *sorted {
+	c := newSorted()
+	for _, rr := range r {
+		c.totalC02e[rr.Country] += rr.Value
+	}
+	for country, _ := range c.totalC02e {
+		c.rank = append(c.rank, country)
+	}
+	sort.Sort(c)
+	c.calcTop(topN)
+	return c
+}
+
+func (f *sorted) Len() int {
+	return len(f.totalC02e)
+}
+
+func (f *sorted) Swap(i, j int) {
+	f.rank[i], f.rank[j] = f.rank[j], f.rank[i]
+}
+
+func (f *sorted) Less(i, j int) bool {
+	return f.totalC02e[f.rank[i]] > f.totalC02e[f.rank[j]]
+}
+
+// Determines the top n countries (or closest posisble) with
+// the largest total C02e above 0.
+func (f *sorted) calcTop(n int) (actualN int) {
+	f.top = make(map[string]struct{}, n)
+	for i := 0; i < n && i < len(f.rank); i++ {
+		if f.totalC02e[f.rank[i]] == 0 {
+			continue
+		}
+		f.top[f.rank[i]] = struct{}{}
+		actualN++
+	}
+	return actualN
+}
+
+func toJSON(rr Records, outFile string) error {
 	// Country -> Year -> C02 emission value
 	t := make(map[string]map[string]float64)
 	for _, r := range rr {
 		if _, ok := t[r.Country]; !ok {
 			t[r.Country] = make(map[string]float64)
 		}
-		// TODO(aoeu): What's the best way to filter out 0 Values?
-		// TODO(aoeu): Do some countries need backfilled dummy values for some years?
 		if r.Year < 2011 {
 			t[r.Country][strconv.Itoa(r.Year)] = r.Value
 		}
 	}
+	topNCountries := 50
+	// TODO(aoeu): Having to name a parameter like this seems wrong.
+	aoeu := rr.toSorted(topNCountries)
 	// The data is arranged as a series of JSON objects.
-	// This is either to appease d3 or some intermediary javascript.
+	// The form is to appease d3 xor some suboptimal ECMAScript I wrote.
 	j := make([]map[string]interface{}, 0)
+	// TODO(aoeu): The one letter variable names are too numerous here.
 	for c, y := range t {
+		if _, ok := aoeu.top[c]; !ok {
+			// Exclude any countries outside the top N most emissions.
+			continue
+		}
 		e := make(map[string]interface{})
 		e["Country"] = c
 		for k, v := range y {
