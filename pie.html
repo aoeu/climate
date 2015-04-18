@@ -114,7 +114,12 @@ function draw(data, year) {
 
     gEnter.append("path")
         .attr("d", arc)
-        .style("fill", function(d) { return color(d.data[year]); });
+        .style("fill", function(d) { 
+		var c = color(d.data[year]); 
+		d.data["arcColor"] = c;
+		d.data["textColor"] = "#" + ("000000" + (0xFFFFFF ^ parseInt(c.replace("#", "0x"), 16)).toString(16)).substr(-6).toUpperCase(); // TODO: Make sane.
+		return c;
+	});
 
     gEnter.append("text")
         .attr("transform", function(d) {
@@ -123,19 +128,18 @@ function draw(data, year) {
                     "rotate(" + getAngle(d) + ")";
         })
         .attr("dy", ".35em")
-        .style("text-anchor", "middle")
+        .style({"text-anchor" : "middle",
+		"visibility" : isTextVisible,   
+		"fill" : function(d) { return d.data["textColor"] } 
+	})
         .text(function(d) { 
-            if (d.endAngle - d.startAngle > 0.05) {
                 return d.data["Country"]; 
-            } 
-            return "";
         });
 
     var gUpdate = g.transition().duration(250);
 
     gUpdate.select("path")
         .attr("d", arc);
-
 
     gUpdate.select("text")
         .attr("transform", function(d) {
@@ -157,12 +161,8 @@ function draw(data, year) {
 			}
 			return "9px"; 
 		},
-		"visibility" : function (d) {
-			if (d.endAngle - d.startAngle < 0.05) {
-				return "hidden";
-			}
-			return "visible";
-		}
+		"visibility" : isTextVisible,
+		"fill" : function(d) { return d.data["textColor"] } 
 	})
         .text(function(d) { 
 		return d.data["Country"]; 
@@ -171,6 +171,13 @@ function draw(data, year) {
     g.exit()
         .select("g")
         .remove();
+}
+
+var isTextVisible = function(d) {
+	if (d.endAngle - d.startAngle < 0.05) {
+		return "hidden";
+	}
+	return "visible";
 }
 
 d3.json("data/input/co2ekt_by_year_by_country.json", function(data) { 
