@@ -110,7 +110,9 @@ func toJSON(rr []Record, outFile string) error {
 		}
 		// TODO(aoeu): What's the best way to filter out 0 Values?
 		// TODO(aoeu): Do some countries need backfilled dummy values for some years?
-		t[r.Country][strconv.Itoa(r.Year)] = r.Value
+		if r.Year < 2011 {
+			t[r.Country][strconv.Itoa(r.Year)] = r.Value
+		}
 	}
 	// The data is arranged as a series of JSON objects.
 	// This is either to appease d3 or some intermediary javascript.
