@@ -1,0 +1,174 @@
+<!doctype html>
+<head>
+    <title>CO2 Emissions</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font: 9px sans-serif;
+        }
+        .arc path {
+            stroke: #fff;
+            stroke-width: 0;
+        }
+        #pie_chart {
+            width: 100%;
+            text-align: center;
+        }
+        #year_div {
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font: 30px sans-serif;
+            font-weight: bold;
+        }
+        button {
+            font: 12px sans-serif;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+<script type="text/javascript" src="lib/d3.v3.min.js"></script>
+<script type="text/javascript" src="lib/jquery-1.9.1.js"></script>
+<form name="year" action="">
+    <input type="date" id="year" value="1960-01-01" min="1/1/1960" max="1/1/2011"/>
+    <button onclick="redraw(); return false;">Restart</button>
+</form>
+<div id="pie_chart">
+<script type="text/javascript">
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+var year = "1960",
+    d;
+
+function redraw() { 
+    var date = parseDate(document.getElementById("year").value);
+    year = date.getFullYear().toString();
+    draw(d, year);
+}
+
+var width = 600,
+    height = width,
+    radius = Math.min(width, height) / 2;
+
+var color = d3.scale.ordinal().range(
+[
+"#ff6800",
+"#ff8e00",
+"#53377a",
+"#b32851",
+"#f13a13",
+"#ff7a5c",
+"#f6768e",
+"#ffb300",
+"#007d34",
+"#7f180d",
+"#93aa00",
+"#00538a",
+"#232c16",
+"#803e75",
+"#a6bdd7",
+"#c10020",
+"#817066",
+"#593315",
+"#f4c800"
+]
+); 
+
+var arc = d3.svg.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(0);
+
+var pie = d3.layout.pie()
+    //.sort(null)
+    .sort(function(a, b) { return b[year] - a[year]; })
+    .value(function(d) { return d[year]; });
+
+var svg = d3.select("#pie_chart").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+function getAngle(d) {
+    var angle = (180 / Math.PI * (d.startAngle + d.endAngle) / 2 - 90);
+    angle = (angle > 180) ? angle - 180 : angle;
+    if (angle > 90 && angle < 180) {
+        angle += 180; 
+    }
+    return angle;
+}
+
+function draw(data, year) {
+    var g = svg.selectAll(".arc")
+        .data(pie(data));
+
+    var gEnter = g.enter().append("g")
+                    .attr("class", "arc");
+
+    gEnter.append("path")
+        .attr("d", arc)
+        .style("fill", function(d) { return color(d.data[year]); });
+
+    gEnter.append("text")
+        .attr("transform", function(d) {
+            textPos = arc.centroid(d);
+            return "translate(" + textPos + ") " +
+                    "rotate(" + getAngle(d) + ")";
+        })
+        .attr("dy", ".35em")
+        .style("text-anchor", "middle")
+        .text(function(d) { 
+            if (d.endAngle - d.startAngle > 0.05) {
+                return d.data["Country"]; 
+            } 
+            return "";
+        });
+
+    var gUpdate = g.transition().duration(250);
+
+    gUpdate.select("path")
+        .attr("d", arc);
+
+
+    gUpdate.select("text")
+        .attr("transform", function(d) {
+            textPos = arc.centroid(d);
+            return "translate(" + textPos + ") " +
+                    "rotate(" + getAngle(d) + ")";
+        })
+        .text(function(d) { 
+            if (d.endAngle - d.startAngle > 0.05) {
+                return d.data["Country"]; 
+            } 
+            return "";
+        });
+
+    g.exit()
+        .select("g")
+        .remove();
+}
+
+d3.json("data/input/co2ekt_by_year_by_country.json", function(data) { 
+	d = data; 
+	draw(d, year); 
+	return; 
+});
+
+function animate() {
+    var yearInt = new Number(year);
+    if (yearInt < 2011) { 
+        yearInt++;
+    }
+    year = yearInt.toString();
+    var yearDisplay = document.getElementById("year_display");
+    yearDisplay.innerHTML = year;
+    draw(d, year);
+}
+
+setInterval("animate();", 1000);
+</script>
+<div id="year_div"><h1 id="year_display">1960</h1></div>
+</div>
+</body>
+</html>
