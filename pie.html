@@ -75,6 +75,10 @@ var color = d3.scale.ordinal().range(
 ]
 ); 
 
+var fontSize = d3.scale.linear()
+	.domain([0.05, 2.08])
+	.range([9, 42]);
+
 var arc = d3.svg.arc()
     .outerRadius(radius - 10)
     .innerRadius(0);
@@ -98,6 +102,9 @@ function getAngle(d) {
     }
     return angle;
 }
+
+var maxDelta = 0;
+var minDelta = 9999999;
 
 function draw(data, year) {
     var g = svg.selectAll(".arc")
@@ -137,6 +144,21 @@ function draw(data, year) {
             return "translate(" + textPos + ") " +
                     "rotate(" + getAngle(d) + ")";
         })
+	.style({'text-anchor': 'middle',
+		'font-size' : function (d) { 
+			var delta = d.endAngle - d.startAngle;
+			if (delta > 0.05) {
+				if (delta < minDelta) {
+					minDelta = delta;
+				}
+				if (delta > maxDelta) {
+					maxDelta = delta;
+				}
+				return fontSize(delta) + "px";
+			}
+			return "9px"; 
+		} 
+	})
         .text(function(d) { 
             if (d.endAngle - d.startAngle > 0.05) {
                 return d.data["Country"]; 
