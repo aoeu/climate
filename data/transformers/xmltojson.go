@@ -19,7 +19,11 @@ func main() {
 		debugFile string
 		blacklist string
 		whitelist string
+		n         int
 	}{}
+	flag.IntVar(&args.n, "n",
+		-1,
+		"The maximum number of entries / arcs in the pie chart, -1 for all")
 	flag.StringVar(&args.inFile, "in",
 		"en.atm.co2e.kt_Indicator_en_xml_v2.xml",
 		"The XML file of data to unmarshal")
@@ -63,7 +67,7 @@ func main() {
 		r.Records.blacklist(m)
 	}
 
-	err = toJSON(r.Records, args.outFile)
+	err = toJSON(r.Records, args.outFile, args.n)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,6 +150,9 @@ func (f *sorted) Less(i, j int) bool {
 // Determines the top n countries (or closest posisble) with
 // the largest total C02e above 0.
 func (f *sorted) calcTop(n int) (actualN int) {
+	if n < 0 {
+		n = 0
+	}
 	f.top = make(map[string]struct{}, n)
 	for i := 0; i < n && i < len(f.rank); i++ {
 		if f.totalC02e[f.rank[i]] == 0 {
@@ -157,7 +164,7 @@ func (f *sorted) calcTop(n int) (actualN int) {
 	return actualN
 }
 
-func toJSON(rr Records, outFile string) error {
+func toJSON(rr Records, outFile string, topNCountries int) error {
 	// Country -> Year -> C02 emission value
 	t := make(map[string]map[string]float64)
 	for _, r := range rr {
@@ -168,7 +175,6 @@ func toJSON(rr Records, outFile string) error {
 			t[r.Country][strconv.Itoa(r.Year)] = r.Value
 		}
 	}
-	topNCountries := 50
 	// TODO(aoeu): Having to name a parameter like this seems wrong.
 	aoeu := rr.toSorted(topNCountries)
 	// The data is arranged as a series of JSON objects.
@@ -176,9 +182,15 @@ func toJSON(rr Records, outFile string) error {
 	j := make([]map[string]interface{}, 0)
 	// TODO(aoeu): The one letter variable names are too numerous here.
 	for c, y := range t {
-		if _, ok := aoeu.top[c]; !ok {
-			// Exclude any countries outside the top N most emissions.
+		if aoeu.totalC02e[c] == 0 {
+			// Exclude countries that never had emissions.
 			continue
+		}
+		if topNCountries > 0 {
+			if _, ok := aoeu.top[c]; !ok {
+				// Exclude any countries outside the top N most emissions.
+				continue
+			}
 		}
 		e := make(map[string]interface{})
 		e["Country"] = c
