@@ -7,11 +7,17 @@
         body {
             font: 9px sans-serif;
             font-family: 'Varela Round', sans-serif;
-            //background: lightblue;     
+            background: lightblue;     
         }
         .arc path {
             stroke: #fff;
             stroke-width: 0;
+        }
+        #envelope {
+            background: white;
+            height: 700px;
+            width: 500px;
+            padding-top: 33px;
         }
         #pie_chart {
             width: 100%;
@@ -52,6 +58,7 @@
     <input type="date" id="year" value="1960-01-01" min="1/1/1960" max="1/1/2010"/>
     <button onclick="redraw(); return false;">Restart</button>
 </form>
+<div id="envelope">
 <div id="title_div"><h1 id="title">Global CO<sub>2</sub> Emissions</h1></div>
 <div id="pie_chart">
 <script type="text/javascript">
@@ -65,7 +72,7 @@ function redraw() {
     draw(d, year);
 }
 
-var width = 600,
+var width = 500,
     height = width,
     radius = Math.min(width, height) / 2;
 
@@ -220,6 +227,7 @@ function animate() {
 setInterval("animate();", 1000);
 </script>
 <div id="year_div"><h1 id="year_display">1960</h1></div>
+</div>
 </div>
 </body>
 </html>
