@@ -2,9 +2,12 @@
 <head>
     <title>CO2 Emissions</title>
     <meta charset="utf-8">
-    <style>
+    <link href='http://fonts.googleapis.com/css?family=Ubuntu+Condensed|Varela+Round' rel='stylesheet' type='text/css'>
+    <style>        
         body {
             font: 9px sans-serif;
+            font-family: 'Varela Round', sans-serif;
+            //background: lightblue;     
         }
         .arc path {
             stroke: #fff;
@@ -14,13 +17,27 @@
             width: 100%;
             text-align: center;
         }
+        #title_div {
+            width: 100%;
+            text-align: center;
+        }
+        #title {
+            font-family: 'Varela Round', sans-serif;
+            font-size: 24px;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; 
+        }
         #year_div {
             width: 100%;
             text-align: center;
         }
+        #year_display {
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; 
+        }
         h1 {
             font: 30px sans-serif;
             font-weight: bold;
+            font-family: 'Varela Round', sans-serif;
+
         }
         button {
             font: 12px sans-serif;
@@ -35,6 +52,7 @@
     <input type="date" id="year" value="1960-01-01" min="1/1/1960" max="1/1/2010"/>
     <button onclick="redraw(); return false;">Restart</button>
 </form>
+<div id="title_div"><h1 id="title">Global CO<sub>2</sub> Emissions</h1></div>
 <div id="pie_chart">
 <script type="text/javascript">
 var parseDate = d3.time.format("%Y-%m-%d").parse;
@@ -126,15 +144,12 @@ function draw(data, year) {
             return "translate(" + textPos + ") " +
                     "rotate(" + getAngle(d) + ")";
         })
-        .attr("dy", ".35em")
-	.style({"text-anchor" : "middle",
-		"font-size" : calcFontSize,
-		"visibility": isTextVisible,
-		"fill" : getTextColor
-	})
-        .text(function(d) { 
-                return d.data["Country"]; 
-        });
+    	.style({"text-anchor" : "middle",
+        		"font-size" : calcFontSize,
+        		"visibility": isTextVisible,
+        		"fill" : getTextColor
+    	})
+        .text(getCountry);
 
     var gUpdate = g.transition().duration(250);
 
@@ -147,11 +162,11 @@ function draw(data, year) {
             return "translate(" + textPos + ") " +
                     "rotate(" + getAngle(d) + ")";
         })
-	.style({"text-anchor" : "middle",
-		"font-size" : calcFontSize,
-		"visibility": isTextVisible,
-		"fill" : getTextColor
-	})
+    	.style({"text-anchor" : "middle",
+        		"font-size" : calcFontSize,
+        		"visibility": isTextVisible,
+        		"fill" : getTextColor
+    	})
         .text(getCountry);
 
     g.exit()
@@ -179,7 +194,7 @@ var calcFontSize = function (d) {
 }
 
 var isTextVisible = function(d) {
-	if (d.endAngle - d.startAngle < 0.02) {
+	if (d.endAngle - d.startAngle < 0.05) {
 		return "hidden";
 	}
 	return "visible";
