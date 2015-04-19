@@ -1,22 +1,35 @@
-EUU
-SAS
-NAC
-ARB
-OED
-WLD
-LIC
-LMC
-LMY
-MIC
-NOC
-OEC
-LCN
-HIC
-EAP
-EAS
-ECA
-ECS
-SSF
-SST
-UMC
-MEA
+ARB Arab World
+CEB Central Europe and the Baltics
+CSS Caribbean small states
+EAP East Asia &amp; Pacific (developing only)
+EAS East Asia &amp; Pacific (all income levels)
+ECA Europe &amp; Central Asia (developing only)
+ECS Europe &amp; Central Asia (all income levels)
+EMU Euro area
+EUU European Union
+FCS Fragile and conflict affected situations
+HIC High income
+HPC Heavily indebted poor countries (HIPC)
+INX Not classified
+LAC Latin America &amp; Caribbean (developing only)
+LCN Latin America &amp; Caribbean (all income levels)
+LDC Least developed countries: UN classification
+LIC Low income
+LMC Lower middle income
+LMY Low &amp; middle income
+MIC Middle income
+MEA Middle East &amp; North Africa (all income levels)
+MNA Middle East &amp; North Africa (developing only)
+NAC North America
+NOC High income: nonOECD
+OEC High income: OECD
+OED OECD members
+OSS Other small states
+PSE West Bank and Gaza
+PSS Pacific island small states
+SAS South Asia
+SSA Sub-Saharan Africa (developing only)
+SSF Sub-Saharan Africa (all income levels)
+SST Small states
+UMC Upper middle income
+WLD World

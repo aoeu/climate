@@ -57,6 +57,7 @@ func main() {
 		bl := strings.Split(string(b), "\n")
 		m := make(map[string]struct{}, len(bl))
 		for _, s := range bl {
+			s = strings.Split(s, " ")[0]
 			m[s] = struct{}{}
 		}
 		r.Records.blacklist(m)
