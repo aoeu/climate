@@ -75,9 +75,9 @@ var color = d3.scale.ordinal().range(
 ]
 ); 
 
-var fontSize = d3.scale.linear()
-	.domain([0.05, 2.08])
-	.range([9, 42]);
+var fontSize = d3.scale.log()
+	.domain([0.02, 2.08])
+	.range([1, 36]);
 
 var arc = d3.svg.arc()
     .outerRadius(radius - 10)
@@ -170,20 +170,17 @@ var getTextColor = function(d) {
 
 var calcFontSize = function (d) { 
 	var delta = d.endAngle - d.startAngle;
-	if (delta > 0.05) {
-		if (delta < minDelta) {
-			minDelta = delta;
-		}
-		if (delta > maxDelta) {
-			maxDelta = delta;
-		}
-		return fontSize(delta) + "px";
+	if (delta < minDelta) {
+		minDelta = delta;
 	}
-	return "9px"; 
+	if (delta > maxDelta) {
+		maxDelta = delta;
+	}
+	return fontSize(delta) + "px";
 }
 
 var isTextVisible = function(d) {
-	if (d.endAngle - d.startAngle < 0.05) {
+	if (d.endAngle - d.startAngle < 0.02) {
 		return "hidden";
 	}
 	return "visible";
