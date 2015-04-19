@@ -181,7 +181,8 @@ func toJSON(rr Records, outFile string, topNCountries int) error {
 	// The form is to appease d3 xor some suboptimal ECMAScript I wrote.
 	j := make([]map[string]interface{}, 0)
 	// TODO(aoeu): The one letter variable names are too numerous here.
-	for c, y := range t {
+	for _, c := range aoeu.rank {
+		y := t[c]
 		if aoeu.totalC02e[c] == 0 {
 			// Exclude countries that never had emissions.
 			continue
